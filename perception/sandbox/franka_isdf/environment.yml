@@ -1,0 +1,19 @@
+name: franka_isdf
+channels:
+  - pytorch
+  - fair-robotics
+  - aihabitat
+  - conda-forge
+  - defaults
+dependencies:
+  - polymetis=1079
+  - opencv=4.5.1
+  - librealsense=2.50.0
+  - scipy=1.7.3
+  - cmake
+  - pybind11
+  - pip
+  - pip:
+    - fairo/perception/realsense_driver
+    - fairo/perception/fairotag #for plotting
+    - sophuspy
