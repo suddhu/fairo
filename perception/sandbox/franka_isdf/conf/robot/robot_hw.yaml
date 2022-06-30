@@ -1,0 +1,3 @@
+robot:
+  _target_: polygrasp.robot_interface.GraspingRobotInterface
+  ip_address: "100.67.224.116"

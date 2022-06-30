@@ -1,0 +1,3 @@
+defaults:
+  - robot: robot_hw
+  - cam: cam_realsense

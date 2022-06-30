@@ -14,6 +14,6 @@ dependencies:
   - pybind11
   - pip
   - pip:
-    - fairo/perception/realsense_driver
-    - fairo/perception/fairotag #for plotting
+    - ../../realsense_driver/
+    - ../../fairotag #for plotting
     - sophuspy

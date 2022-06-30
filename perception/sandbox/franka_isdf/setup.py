@@ -4,11 +4,18 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from gettext import install
 from setuptools import setup, find_packages
 
 __author__ = "Sudharshan Suresh"
-__copyright__ = "2022, Facebook"
+__copyright__ = "2022, Meta"
 
+install_requires = [
+    "mrp",
+    "open3d",
+    "fairomsg",
+    "realsense_wrapper",
+]
 
 setup(
     name="franka_isdf",
@@ -17,5 +24,7 @@ setup(
     version="0.1",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
+    include_package_data=True,
     scripts=["src/collect_data.py", "src/test_hardware.py"],
+    install_requires = install_requires
 )
