@@ -5,114 +5,114 @@ Connects to the robot and realsense, and runs the iSDF mapping from RGB-D
 """
 
 import numpy as np
-import time, os
+import time, os, datetime
+from os import path as osp
 import hydra
+import logging
+from omegaconf import DictConfig, OmegaConf
+import torch
+# import open3d as o3d
+from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import proj3d
 
+log = logging.getLogger(__name__)
+fig = plt.figure(figsize=(12, 8))
+
+# vis = o3d.visualization.Visualizer()
+# vis.create_window(visible = True)
+def save_img(img, name):
+    f = plt.figure()
+    plt.imshow(img)
+    f.savefig(f"{name}.png")
+    plt.close(f)
+
+def show_img(rgb, depth, timestamp):
+    plt.clf()
+    plt.subplot(2, 2, 1)
+    plt.imshow(rgb)
+    plt.title('RGB ' + str(timestamp))
+    plt.subplot(2, 2, 3)
+    plt.imshow(depth)
+    plt.title('Depth ' + str(timestamp))
+    plt.draw()
+    plt.pause(1e-6)
+
+def save_pointcloud(scene_pcd, name):
+    """Render a scene's pointcloud and return the Open3d Visualizer."""
+    # vis = o3d.visualization.Visualizer()
+    # vis.create_window(visible=True)
+    # vis.add_geometry(scene_pcd)
+    # vis.run()
+    # vis.destroy_window()
+    # Save scene
+    # vis.capture_screen_image(f"{name}.png")
+    # vis.destroy_window()
+
+    skip = 100  
+
+    plt.subplot(1, 2, 2, projection='3d')
+    point_cloud = np.asarray(scene_pcd.points)
+    x = point_cloud[::skip, 0]
+    y = point_cloud[::skip, 1]
+    z = point_cloud[::skip, 2]
+
+    print(x)
+    # ax = fig.add_subplot(111, projection='3d')
+    plt.scatter(x, y, z)
+    plt.draw()
+    plt.pause(1e-6)
+
+    # vis.update_geometry(scene_pcd)
+    # vis.poll_events()
+    # vis.update_renderer()
+    # time.sleep(1)
+                                    
 @hydra.main(config_path="../conf", config_name="run_isdf")
-def main(cfg):
-    print(f"Config:\n{omegaconf.OmegaConf.to_yaml(cfg, resolve=True)}")
-    print(f"Current working directory: {os.getcwd()}")
+def main(cfg : DictConfig):
+    print(f"Config:\n{OmegaConf.to_yaml(cfg, resolve=True)}")
+
+    # make folders for recording data 
+    isdf_path = '/mnt/tmp_nfs_clientshare/suddhu/isdf_data'
+    datetime_folder = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    savepath = osp.join(isdf_path, datetime_folder)
+    rgb_path = osp.join(savepath, "images")
+    depth_path = osp.join(savepath, "depth")
+    cloud_path = osp.join(savepath, "cloud")
+
+    os.makedirs(savepath)
+    os.makedirs(rgb_path)
+    os.makedirs(depth_path)
+    os.makedirs(cloud_path)
 
     print("Initialize robot & gripper")
     robot = hydra.utils.instantiate(cfg.robot)
-    robot.gripper_open()
     robot.go_home()
+
+    # time.sleep(2)
+    # state_log = robot.move_to_ee_pose(position = torch.Tensor([0.5, 0.5, 0.5]), orientation = None, time_to_go = 5)
 
     print("Initializing cameras")
     cfg.cam.intrinsics_file = hydra.utils.to_absolute_path(cfg.cam.intrinsics_file)
     cfg.cam.extrinsics_file = hydra.utils.to_absolute_path(cfg.cam.extrinsics_file)
     cameras = hydra.utils.instantiate(cfg.cam)
 
-    print("Loading camera workspace masks")
-    masks_1 = np.array(
-        [load_bw_img(hydra.utils.to_absolute_path(x)) for x in cfg.masks_1],
-        dtype=np.float64,
-    )
-    masks_2 = np.array(
-        [load_bw_img(hydra.utils.to_absolute_path(x)) for x in cfg.masks_2],
-        dtype=np.float64,
-    )
+    print("Getting rgbd and pcds..")
+    while True: 
+        timestamp = int(time.time())
+        rgbd = cameras.get_rgbd()
+        rgb = rgbd[0, :, :, :3]
+        depth = rgbd[0, :, :, 3]
+        scene_pcd = cameras.get_pcd(rgbd)
 
-    print("Connect to grasp candidate selection and pointcloud processor")
-    segmentation_client = SegmentationClient()
-    grasp_client = GraspClient(
-        view_json_path=hydra.utils.to_absolute_path(cfg.view_json_path)
-    )
+        print(len(scene_pcd.points))
 
-    root_working_dir = os.getcwd()
-    for outer_i in range(cfg.num_bin_shifts):
-        cam_i = outer_i % 2
-        print(f"=== Starting bin shift with cam {cam_i} ===")
-
-        # Define some parameters for each workspace.
-        if cam_i == 0:
-            masks = masks_1
-            hori_offset = torch.Tensor([0, -0.4, 0])
-        else:
-            masks = masks_2
-            hori_offset = torch.Tensor([0, 0.4, 0])
-        time_to_go = 3
-
-        for i in range(cfg.num_grasps_per_bin_shift):
-            # Create directory for current grasp iteration
-            os.chdir(root_working_dir)
-            timestamp = int(time.time())
-            os.makedirs(f"{timestamp}")
-            os.chdir(f"{timestamp}")
-
-            print(
-                f"=== Grasp {i + 1}/{cfg.num_grasps_per_bin_shift}, logging to"
-                f" {os.getcwd()} ==="
-            )
-
-            print("Getting rgbd and pcds..")
-            rgbd = cameras.get_rgbd()
-
-            rgbd_masked = rgbd * masks[:, :, :, None]
-            scene_pcd = cameras.get_pcd(rgbd)
-            save_rgbd_masked(rgbd, rgbd_masked)
-
-            print("Segmenting image...")
-            unmerged_obj_pcds = []
-            for i in range(cameras.n_cams):
-                obj_masked_rgbds, obj_masks = segmentation_client.segment_img(
-                    rgbd_masked[i], min_mask_size=cfg.min_mask_size
-                )
-                unmerged_obj_pcds += [
-                    cameras.get_pcd_i(obj_masked_rgbd, i)
-                    for obj_masked_rgbd in obj_masked_rgbds
-                ]
-            print(
-                f"Merging {len(unmerged_obj_pcds)} object pcds by clustering their centroids"
-            )
-            obj_pcds = merge_pcds(unmerged_obj_pcds)
-            if len(obj_pcds) == 0:
-                print(
-                    f"Failed to find any objects with mask size > {cfg.min_mask_size}!"
-                )
-                break
-
-            print("Getting grasps per object...")
-            obj_i, filtered_grasp_group = grasp_client.get_obj_grasps(
-                obj_pcds, scene_pcd
-            )
-
-            print("Choosing a grasp for the object")
-            final_filtered_grasps, chosen_grasp_i = robot.select_grasp(
-                filtered_grasp_group
-            )
-            chosen_grasp = final_filtered_grasps[chosen_grasp_i]
-
-            grasp_client.visualize_grasp(scene_pcd, final_filtered_grasps)
-            grasp_client.visualize_grasp(
-                obj_pcds[obj_i], final_filtered_grasps, name="obj"
-            )
-
-            traj = execute_grasp(robot, chosen_grasp, hori_offset, time_to_go)
-
-            print("Going home")
-            robot.go_home()
-
+        # os.chdir(rgb_path)
+        # save_img(rgb, name = timestamp)
+        # os.chdir(depth_path)
+        # save_img(depth, name = timestamp)
+        os.chdir(cloud_path)
+        show_img(rgb = rgb, depth = depth, timestamp= timestamp)
+        save_pointcloud(scene_pcd, name = timestamp)
 
 if __name__ == "__main__":
     main()

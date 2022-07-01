@@ -18,7 +18,7 @@ mrp.process(
     name="cam_pub",
     runtime=mrp.Conda(
         shared_env=franka_isdf_shared_env,
-        run_command=["python", "-m", "cam_pub_sub"],
+        run_command=["python", "-m", "franka_isdf.cam_pub_sub"],
     ),
 )
 

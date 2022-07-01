@@ -1,3 +1,4 @@
 robot:
-  _target_: polygrasp.robot_interface.GraspingRobotInterface
-  ip_address: "100.67.224.116"
+  _target_: polymetis.RobotInterface
+  ip_address: "172.16.0.1"
+  enforce_version: False

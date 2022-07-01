@@ -29,6 +29,9 @@ class CameraSubscriber:
         with open(extrinsics_file, "r") as f:
             self.extrinsics = json.load(f)
 
+        print(f"len_intrinsics: {len(self.intrinsics)}")
+        print(f"len_extrinsics: {len(self.extrinsics)}")
+
         assert len(self.intrinsics) == len(self.extrinsics)
         self.n_cams = len(self.intrinsics)
 
@@ -39,7 +42,6 @@ class CameraSubscriber:
         if self.sub.can_read():
             self.recent_rgbd = bytes_to_np(self.sub.read().payload)
         return self.recent_rgbd
-
 
 class PointCloudSubscriber(CameraSubscriber):
     def __init__(self, *args, **kwargs):
@@ -80,8 +82,8 @@ class PointCloudSubscriber(CameraSubscriber):
         img = (rgbd[:, :, :3] * mask[:, :, None]).astype(np.uint8)
         depth = (rgbd[:, :, 3] * mask).astype(np.uint16)
 
-        o3d_img = o3d.cuda.pybind.geometry.Image(img)
-        o3d_depth = o3d.cuda.pybind.geometry.Image(depth)
+        o3d_img = o3d.geometry.Image(img)
+        o3d_depth = o3d.geometry.Image(depth)
 
         rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
             o3d_img,
