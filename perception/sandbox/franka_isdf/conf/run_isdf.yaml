@@ -1,3 +1,5 @@
 defaults:
   - robot: robot_hw
   - cam: cam_realsense
+
+view_json_path: conf/o3d_view.json

@@ -12,6 +12,9 @@ __copyright__ = "2022, Meta"
 
 install_requires = [
     "mrp",
+    "open3d",
+    "pyvista",
+    "pyvistaqt",
     "fairomsg",
     "realsense_wrapper",
 ]

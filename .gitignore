@@ -8,6 +8,7 @@ craftassist/test/dashboard_data.db
 craftassist/test/nsp_outputs.csv
 locobot/agent/nsp_outputs.csv
 locobot/test/nsp_outputs.csv
+outputs/
 .coverage
 droidlet.egg-info
 logs

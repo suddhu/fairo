@@ -11,15 +11,20 @@ import hydra
 import logging
 from omegaconf import DictConfig, OmegaConf
 import torch
-# import open3d as o3d
+import open3d as o3d
 from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import proj3d
+import pyvista as pv
+from pyvistaqt import BackgroundPlotter
+
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(osp.join(dname, '..'))
 
 log = logging.getLogger(__name__)
 fig = plt.figure(figsize=(12, 8))
 
-# vis = o3d.visualization.Visualizer()
-# vis.create_window(visible = True)
+vis = BackgroundPlotter()
+
 def save_img(img, name):
     f = plt.figure()
     plt.imshow(img)
@@ -37,35 +42,18 @@ def show_img(rgb, depth, timestamp):
     plt.draw()
     plt.pause(1e-6)
 
-def save_pointcloud(scene_pcd, name):
+def visualize(scene_pcd, view_json_path):
     """Render a scene's pointcloud and return the Open3d Visualizer."""
-    # vis = o3d.visualization.Visualizer()
-    # vis.create_window(visible=True)
+    # vis.clear_geometries()
     # vis.add_geometry(scene_pcd)
-    # vis.run()
-    # vis.destroy_window()
-    # Save scene
-    # vis.capture_screen_image(f"{name}.png")
-    # vis.destroy_window()
-
-    skip = 100  
-
-    plt.subplot(1, 2, 2, projection='3d')
-    point_cloud = np.asarray(scene_pcd.points)
-    x = point_cloud[::skip, 0]
-    y = point_cloud[::skip, 1]
-    z = point_cloud[::skip, 2]
-
-    print(x)
-    # ax = fig.add_subplot(111, projection='3d')
-    plt.scatter(x, y, z)
-    plt.draw()
-    plt.pause(1e-6)
-
-    # vis.update_geometry(scene_pcd)
-    # vis.poll_events()
     # vis.update_renderer()
-    # time.sleep(1)
+    # vis.poll_events()
+    # vis.run()
+    point_cloud = pv.PolyData(np.array(scene_pcd.points))
+    colors = np.array(scene_pcd.colors)
+    dargs = dict(show_scalar_bar=False, opacity=0.3, scalars=colors, rgb=True)
+    vis.clear()
+    pc_actor = vis.add_mesh(point_cloud, render_points_as_spheres=True, point_size=5, **dargs)
                                     
 @hydra.main(config_path="../conf", config_name="run_isdf")
 def main(cfg : DictConfig):
@@ -103,8 +91,8 @@ def main(cfg : DictConfig):
         rgb = rgbd[0, :, :, :3]
         depth = rgbd[0, :, :, 3]
         scene_pcd = cameras.get_pcd(rgbd)
+        down_pcd = scene_pcd.voxel_down_sample(voxel_size=0.01)
 
-        print(len(scene_pcd.points))
 
         # os.chdir(rgb_path)
         # save_img(rgb, name = timestamp)
@@ -112,8 +100,9 @@ def main(cfg : DictConfig):
         # save_img(depth, name = timestamp)
         os.chdir(cloud_path)
         show_img(rgb = rgb, depth = depth, timestamp= timestamp)
-        save_pointcloud(scene_pcd, name = timestamp)
+        visualize(scene_pcd = down_pcd, view_json_path = hydra.utils.to_absolute_path(cfg.view_json_path))
 
+        
 if __name__ == "__main__":
     main()
 
