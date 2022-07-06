@@ -1,17 +1,18 @@
 import mrp
 
-franka_isdf_setup_commands = [
+franka_setup_commands = [
     ["pip", "install", "-e", "../../../msg"],
     ["pip", "install", "-e", "../../realsense_driver"],
+    ["pip", "install", "-e", "./third_party/iSDF"],
     ["pip", "install", "-e", "."],
 ]
-
 
 franka_isdf_shared_env = mrp.Conda.SharedEnv(
     "franka_isdf",
     channels=["pytorch", "fair-robotics", "aihabitat", "conda-forge"],
     dependencies=["polymetis"],
-    setup_commands=franka_isdf_setup_commands,
+    setup_commands=franka_setup_commands,
+    yaml = "./third_party/iSDF/environment.yml"
 )
 
 mrp.process(
