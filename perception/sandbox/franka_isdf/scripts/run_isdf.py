@@ -38,13 +38,6 @@ def main(cfg : DictConfig):
     os.makedirs(depth_path)
     os.makedirs(cloud_path)
 
-    print("Initialize robot & gripper")
-    robot = hydra.utils.instantiate(cfg.robot)
-    robot.go_home()
-
-    # time.sleep(2)
-    # state_log = robot.move_to_ee_pose(position = torch.Tensor([0.5, 0.5, 0.5]), orientation = None, time_to_go = 5)
-
     print("Initializing cameras")
     cfg.cam.intrinsics_file = hydra.utils.to_absolute_path(cfg.cam.intrinsics_file)
     cfg.cam.extrinsics_file = hydra.utils.to_absolute_path(cfg.cam.extrinsics_file)
