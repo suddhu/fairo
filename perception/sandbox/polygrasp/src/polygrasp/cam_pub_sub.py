@@ -11,7 +11,6 @@ from polygrasp import serdes
 log = logging.getLogger(__name__)
 topic = "cams/rgbd"
 
-
 class CameraSubscriber:
     def __init__(self, intrinsics_file, extrinsics_file):
         with open(intrinsics_file, "r") as f:

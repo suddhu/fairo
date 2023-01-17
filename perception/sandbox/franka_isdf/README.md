@@ -30,3 +30,4 @@ The example script to bring everything together and execute the grasps:
 conda activate mrp_franka_isdf
 python scripts/run_isdf.py  # Connect to robot, gripper, servers; run grasp
 ```
+# github personal access token = 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

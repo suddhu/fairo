@@ -46,7 +46,7 @@ class MyPDPolicy(toco.PolicyModule):
 if __name__ == "__main__":
     # Initialize robot interface
     robot = RobotInterface(
-        ip_address="localhost",
+        ip_address="172.16.0.1", enforce_version = False
     )
 
     # Reset

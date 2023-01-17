@@ -4,6 +4,7 @@ franka_setup_commands = [
     ["pip", "install", "-e", "../../../msg"],
     ["pip", "install", "-e", "../../realsense_driver"],
     ["pip", "install", "-e", "./third_party/iSDF"],
+    ["pip", "install", "-e", "./third_party/tacto"],
     ["pip", "install", "-e", "."],
 ]
 

@@ -29,3 +29,6 @@
 [submodule "perception/sandbox/franka_isdf/third_party/iSDF"]
 	path = perception/sandbox/franka_isdf/third_party/iSDF
 	url = https://github.com/suddhu/iSDF.git
+[submodule "perception/sandbox/franka_isdf/third_party/tacto"]
+	path = perception/sandbox/franka_isdf/third_party/tacto
+	url = https://github.com/suddhu/tacto.git
